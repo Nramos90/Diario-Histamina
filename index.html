@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Diario de Histamina</title>
+<meta name="description" content="Armá platos y seguí la carga aproximada de histamina, cafeína, agua y síntomas.">
+<meta name="theme-color" content="#2d7356" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101815" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&display=swap">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+/* Layout: app de una columna (dos en escritorio para el resumen), tarjetas suaves, barra de navegación flotante abajo */
+:root{
+  --bg:#eef3ef; --surface:#ffffff; --surface-2:#f5f8f6; --fg:#1d2b25; --muted:#64766e; --line:#dde6e0;
+  --accent:#2d7356; --accent-soft:#d9ece2; --on-accent:#ffffff;
+  --alto:#d4574b; --alto-soft:#fbe4e1; --medio:#d0902a; --medio-soft:#fbefd9; --bajo:#3f9a5f; --bajo-soft:#dff1e5;
+  --veg:#5aa66e; --prot:#d77a5b; --hid:#e3b04b; --fru:#b56aa6; --otro:#9aa8a1; --agua:#4b97c9; --cafe:#8a5a3c;
+  --shadow:0 1px 2px rgba(30,60,45,.06),0 6px 20px rgba(30,60,45,.07);
+  --display:"Lexend","Segoe UI",system-ui,sans-serif;
+  --body:"Nunito Sans","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101815; --surface:#18231f; --surface-2:#1e2b26; --fg:#e5eee9; --muted:#97aaa1; --line:#2a3933;
+  --accent:#6cc79b; --accent-soft:#1f3a2e; --on-accent:#0d1a14;
+  --alto:#f08a7f; --alto-soft:#3d2320; --medio:#eab25a; --medio-soft:#3a2e18; --bajo:#73cf91; --bajo-soft:#1d3626;
+  --veg:#7cc68e; --prot:#ec9a7c; --hid:#efc66d; --fru:#d58ec6; --otro:#7f8e87; --agua:#6fb6e4; --cafe:#c58d68;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101815; --surface:#18231f; --surface-2:#1e2b26; --fg:#e5eee9; --muted:#97aaa1; --line:#2a3933;
+  --accent:#6cc79b; --accent-soft:#1f3a2e; --on-accent:#0d1a14;
+  --alto:#f08a7f; --alto-soft:#3d2320; --medio:#eab25a; --medio-soft:#3a2e18; --bajo:#73cf91; --bajo-soft:#1d3626;
+  --veg:#7cc68e; --prot:#ec9a7c; --hid:#efc66d; --fru:#d58ec6; --otro:#7f8e87; --agua:#6fb6e4; --cafe:#c58d68;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 120px}
+.wrap{max-width:820px;margin:0 auto;display:grid;gap:16px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;font-weight:600;letter-spacing:-.01em}
+h1{font-size:1.6rem} h2{font-size:1.08rem} h3{font-size:.95rem}
+p{margin:0}
+.muted{color:var(--muted)} .small{font-size:.84rem} .tiny{font-size:.74rem}
+.num{font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;border-radius:12px;padding:8px 12px;transition:background .15s,transform .1s}
+button:active{transform:scale(.97)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{background:var(--surface-2);border:1px solid var(--line)}
+.btn:hover{border-color:var(--accent)}
+.primary{background:var(--accent);color:var(--on-accent);font-weight:700}
+.link{color:var(--accent);font-weight:700;padding:4px 6px}
+input[type=text],input[type=time],input[type=date],select{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:9px 12px;min-width:0}
+
+/* encabezado */
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.hello .tiny{text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.datepill{display:flex;align-items:center;gap:2px;background:var(--surface);border-radius:999px;padding:4px;box-shadow:var(--shadow)}
+.datepill button{border-radius:999px;width:36px;height:36px;padding:0;font-size:1.1rem}
+.datepill button:hover{background:var(--surface-2)}
+.datepill .label{position:relative;padding:0 8px;font-weight:700;font-family:var(--display);font-size:.92rem;white-space:nowrap}
+.datepill input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.stage{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow)}
+.stage button{padding:8px 6px;font-weight:700;font-size:.86rem;color:var(--muted);display:grid;line-height:1.2}
+.stage button span{font-weight:400;font-size:.72rem}
+.stage button[aria-pressed=true]{background:var(--accent-soft);color:var(--accent)}
+
+.card{background:var(--surface);border-radius:20px;padding:18px;box-shadow:var(--shadow);display:grid;gap:12px;min-width:0}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* hoy */
+.top{display:grid;grid-template-columns:1.15fr 1fr;gap:16px}
+@media (max-width:640px){.top{grid-template-columns:1fr}}
+.dial{display:grid;justify-items:center;gap:2px;text-align:center}
+.dial svg{width:100%;max-width:260px;height:auto}
+.dial .big{font-family:var(--display);font-size:2.6rem;font-weight:700;line-height:1}
+.badge{display:inline-block;padding:4px 12px;border-radius:999px;font-weight:700;font-size:.85rem}
+.b-z{background:var(--accent-soft);color:var(--accent)} .b-b{background:var(--bajo-soft);color:var(--bajo)}
+.b-m{background:var(--medio-soft);color:var(--medio)} .b-a{background:var(--alto-soft);color:var(--alto)}
+.mini{display:grid;gap:14px}
+.metric{display:grid;gap:6px}
+.metric-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.metric-head strong{font-family:var(--display);font-weight:600}
+.track{height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden;position:relative}
+.track i{display:block;height:100%;border-radius:5px;transition:width .3s}
+.track .limit{position:absolute;top:0;bottom:0;width:2px;background:var(--fg);opacity:.35}
+.glasses{display:flex;flex-wrap:wrap;gap:4px}
+.glass{width:26px;height:32px;padding:0;border-radius:4px 4px 8px 8px;border:2px solid var(--agua);position:relative;overflow:hidden;background:transparent}
+.glass.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:75%;background:var(--agua);opacity:.8}
+.flags{display:grid;gap:8px}
+.flag{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:14px;background:var(--medio-soft);font-size:.88rem}
+.flag.bad{background:var(--alto-soft)} .flag.good{background:var(--bajo-soft)}
+.flag .dot{flex:none;width:8px;height:8px;border-radius:50%;margin-top:7px;background:var(--medio)}
+.flag.bad .dot{background:var(--alto)} .flag.good .dot{background:var(--bajo)}
+
+.scale10{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.scale10 button{padding:9px 0;border-radius:10px;background:var(--surface-2);font-weight:700;font-variant-numeric:tabular-nums}
+.scale10 button[aria-pressed=true]{color:#fff}
+.scale-ends{display:flex;justify-content:space-between}
+
+.timeline{display:grid;gap:10px}
+.meal{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+.meal .time{display:grid;justify-items:center;gap:4px;padding-top:2px;min-width:52px}
+.meal .time b{font-family:var(--display);font-size:.9rem}
+.meal .time span{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.meal-body{background:var(--surface-2);border-radius:16px;padding:12px 14px;display:grid;gap:8px;min-width:0}
+.meal-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.meal-top strong{font-family:var(--display);font-weight:600;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:.8rem;padding:3px 9px;border-radius:999px;font-weight:600}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.l1{background:var(--alto-soft);color:var(--alto)} .l2{background:var(--medio-soft);color:var(--medio)} .l3{background:var(--bajo-soft);color:var(--bajo)}
+.pts{font-weight:700;font-variant-numeric:tabular-nums;font-size:.86rem}
+.actions{display:flex;gap:2px}
+.actions button{padding:4px 8px;font-size:.82rem;color:var(--muted);font-weight:700}
+.actions button:hover{color:var(--accent)}
+.empty{padding:26px 16px;text-align:center;border:2px dashed var(--line);border-radius:16px;color:var(--muted);display:grid;gap:10px;justify-items:center}
+.example{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;font-size:.84rem;background:var(--accent-soft);color:var(--accent);padding:8px 12px;border-radius:12px;font-weight:600}
+
+/* armar */
+.builder{display:grid;grid-template-columns:1fr 240px;gap:16px;align-items:start}
+@media (max-width:700px){.builder{grid-template-columns:1fr}}
+.fields{display:grid;grid-template-columns:1fr auto auto;gap:8px}
+@media (max-width:520px){.fields{grid-template-columns:1fr 1fr}.fields .full{grid-column:1/-1}}
+.cats{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.cats button{flex:none;background:var(--surface-2);border-radius:999px;padding:6px 12px;font-size:.84rem;font-weight:700;color:var(--muted)}
+.cats button[aria-pressed=true]{background:var(--fg);color:var(--bg)}
+.foods{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px;max-height:360px;overflow:auto;padding:2px}
+.food{display:flex;align-items:center;gap:8px;text-align:left;background:var(--surface-2);border:1px solid transparent;border-radius:14px;padding:8px 10px;font-size:.86rem;line-height:1.25}
+.food:hover{border-color:var(--line)}
+.food .ini{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:.85rem}
+.food.sel{border-color:var(--accent);background:var(--accent-soft)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:.78rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:9px;height:9px;border-radius:50%}
+.side{position:sticky;top:12px;display:grid;gap:12px}
+.plate{display:grid;justify-items:center;gap:6px;text-align:center}
+.plate svg{width:180px;height:180px}
+.plate-legend{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:.78rem;text-align:left}
+.plate-legend span{display:flex;align-items:center;gap:5px}
+.plate-legend i{width:9px;height:9px;border-radius:3px}
+.picked{display:grid;gap:6px}
+.pick{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center}
+.stepper{display:flex;background:var(--surface-2);border-radius:10px}
+.stepper button{padding:2px 9px;font-weight:700}
+.stepper span{min-width:52px;text-align:center;font-size:.78rem;align-self:center}
+.check{display:flex;gap:10px;align-items:center;font-size:.9rem;padding:4px 0}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.totals{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.total{background:var(--surface-2);border-radius:14px;padding:10px;text-align:center}
+.total b{display:block;font-family:var(--display);font-size:1.4rem;font-variant-numeric:tabular-nums}
+
+/* tolerancia */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media (max-width:520px){.steps{grid-template-columns:1fr}}
+.step{background:var(--surface-2);border-radius:14px;padding:12px;display:grid;gap:4px}
+.step.now{background:var(--accent-soft);outline:2px solid var(--accent)}
+.step b{font-family:var(--display)}
+.test{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.test:first-child{border-top:0}
+.status{font-size:.78rem;font-weight:700;padding:3px 10px;border-radius:999px}
+.st-ok{background:var(--bajo-soft);color:var(--bajo)} .st-bad{background:var(--alto-soft);color:var(--alto)} .st-run{background:var(--accent-soft);color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.grow{flex:1 1 180px}
+
+/* historial */
+.chart{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;height:170px}
+.bar{display:grid;grid-template-rows:1fr auto auto;justify-items:center;gap:4px;height:100%}
+.bar .col{width:100%;max-width:40px;align-self:end;border-radius:10px 10px 4px 4px;min-height:4px;background:var(--bajo)}
+.bar b{font-size:.8rem;font-variant-numeric:tabular-nums}
+.bar small{font-size:.72rem;color:var(--muted);text-align:center;line-height:1.2}
+.sdot{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:.72rem;font-weight:700;color:#fff;background:var(--line)}
+.sdot.none{color:var(--muted);background:var(--surface-2)}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+.note{font-size:.8rem;color:var(--muted)}
+
+/* nav */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:center;
+  padding:0 max(12px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));pointer-events:none}
+nav .bar-nav{pointer-events:auto;display:flex;gap:2px;align-items:center;background:var(--surface);border-radius:22px;padding:6px;box-shadow:0 8px 30px rgba(20,40,30,.18);border:1px solid var(--line)}
+nav button{display:grid;justify-items:center;gap:2px;padding:6px 12px;font-size:.72rem;font-weight:700;color:var(--muted);border-radius:16px}
+nav button svg{width:22px;height:22px}
+nav button[aria-current=page]{color:var(--accent);background:var(--accent-soft)}
+nav .add{background:var(--accent);color:var(--on-accent);border-radius:16px;padding:10px 16px}
+nav .add[aria-current=page]{background:var(--accent);color:var(--on-accent);box-shadow:0 0 0 3px var(--accent-soft)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="hello">
+      <div class="tiny">Intolerancia a la histamina</div>
+      <h1>Diario de Histamina</h1>
+    </div>
+    <div class="datepill">
+      <button id="prev" aria-label="Día anterior">‹</button>
+      <span class="label"><span id="fecha-txt">Hoy</span><input type="date" id="fecha" aria-label="Elegir fecha"></span>
+      <button id="next" aria-label="Día siguiente">›</button>
+    </div>
+  </header>
+
+  <div class="stage" role="group" aria-label="Etapa del protocolo">
+    <button data-etapa="detox">Detox<span>15 días · solo lista 3</span></button>
+    <button data-etapa="reintro">Reintroducción<span>1 alimento cada 48 h</span></button>
+    <button data-etapa="dosis">Mi dosis<span>sin sobrecargar el día</span></button>
+  </div>
+
+  <!-- ================= HOY ================= -->
+  <section id="v-hoy" class="wrap">
+    <div class="top">
+      <div class="card dial">
+        <h2 style="justify-self:start">Histamina de hoy</h2>
+        <svg viewBox="0 0 220 128" aria-hidden="true" id="dial"></svg>
+        <div class="big num" id="score" style="margin-top:-46px">0</div>
+        <div class="tiny muted">puntos estimados</div>
+        <span class="badge" id="verdict" style="margin-top:6px"></span>
+      </div>
+      <div class="card mini">
+        <div class="metric">
+          <div class="metric-head"><strong>Cafeína</strong><span class="small num" id="caf-txt"></span></div>
+          <div class="track"><i id="caf-bar" style="background:var(--cafe)"></i><span class="limit" style="left:calc(250/400*100%)"></span></div>
+          <span class="tiny muted">Tu guía: no superar 200–250 mg por día</span>
+        </div>
+        <div class="metric">
+          <div class="metric-head"><strong>Agua</strong><span class="small num" id="agua-txt"></span></div>
+          <div class="glasses" id="glasses"></div>
+        </div>
+        <div class="metric">
+          <div class="metric-head"><strong>Ayuno nocturno</strong><span class="small num" id="ayuno-txt"></span></div>
+          <div class="track"><i id="ayuno-bar" style="background:var(--accent)"></i></div>
+          <span class="tiny muted">Meta: 12 h entre la cena y el desayuno</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="reintro-card" hidden></div>
+
+    <div class="flags" id="flags"></div>
+
+    <div class="card">
+      <div class="card-head"><h2>¿Cómo te sentiste hoy?</h2><span class="tiny muted">Autorregistro de síntomas</span></div>
+      <div class="scale10" id="sint"></div>
+      <div class="scale-ends tiny muted"><span>1 · sin síntomas</span><span>10 · muy intensos</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Comidas del día</h2>
+        <button class="link" id="go-armar">+ Agregar plato</button>
+      </div>
+      <div id="example-note"></div>
+      <div class="timeline" id="meals"></div>
+    </div>
+  </section>
+
+  <!-- ================= ARMAR ================= -->
+  <section id="v-armar" class="card" hidden>
+    <div class="card-head"><h2 id="b-title">Armar plato</h2>
+      <select id="b-plantilla" aria-label="Usar un plato guardado"><option value="">Mis platos guardados…</option></select></div>
+    <div class="builder">
+      <div style="display:grid;gap:12px;min-width:0">
+        <div class="fields">
+          <input type="text" id="b-nombre" class="full" placeholder="Nombre (ej. Merluza con puré de zapallo)">
+          <select id="b-comida" aria-label="Comida"><option>Desayuno</option><option>Almuerzo</option><option>Merienda</option><option>Cena</option><option>Colación</option></select>
+          <input type="time" id="b-hora" aria-label="Hora">
+        </div>
+        <input type="text" id="b-buscar" placeholder="Buscar alimento…">
+        <div class="cats" id="cats"></div>
+        <div class="legend">
+          <span><i style="background:var(--bajo)"></i>Lista 3 · bajo · 0 pts</span>
+          <span><i style="background:var(--medio)"></i>Lista 2 · moderado · 2 pts</span>
+          <span><i style="background:var(--alto)"></i>Lista 1 · alto · 3 pts</span>
+        </div>
+        <div class="foods" id="foods"></div>
+      </div>
+      <div class="side">
+        <div class="plate">
+          <svg viewBox="0 0 100 100" id="plate" aria-label="Composición del plato"></svg>
+          <div class="plate-legend">
+            <span><i style="background:var(--veg)"></i>Verduras</span><span><i style="background:var(--prot)"></i>Proteína</span>
+            <span><i style="background:var(--hid)"></i>Hidratos</span><span><i style="background:var(--fru)"></i>Fruta</span>
+          </div>
+          <span class="tiny muted" id="plate-tip">Modelo de la guía: ½ verduras, ¼ proteína, ¼ hidratos</span>
+        </div>
+        <div class="totals">
+          <div class="total"><b id="b-pts">0</b><span class="tiny muted">pts histamina</span></div>
+          <div class="total"><b id="b-caf">0</b><span class="tiny muted">mg cafeína</span></div>
+        </div>
+        <div class="picked" id="picked"></div>
+        <label class="check"><input type="checkbox" id="b-recal"> Recalentado o hecho con antelación (+2)</label>
+        <label class="check"><input type="checkbox" id="b-guardar"> Guardar en mis platos</label>
+        <p class="tiny" id="b-err" style="color:var(--alto)" hidden>Sumá al menos un alimento.</p>
+        <div class="row"><button class="btn grow" id="b-cancel">Cancelar</button><button class="primary grow" id="b-save">Agregar al día</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TOLERANCIA ================= -->
+  <section id="v-tol" class="wrap" hidden>
+    <div class="card">
+      <h2>Reintroducción paso a paso</h2>
+      <p class="small muted">Probás un alimento por vez y lo retirás, produzca síntomas o no, hasta terminar todas las pruebas. Elegí primero lo que más extrañes y que sea saludable.</p>
+      <div class="steps">
+        <div class="step"><b>Día 1</b><span class="small">Comés el alimento elegido.</span></div>
+        <div class="step"><b>Día 2</b><span class="small">No lo comés. Seguís con lista 3 y observás.</span></div>
+        <div class="step"><b>Día 3</b><span class="small">Anotás el resultado y empezás el siguiente.</span></div>
+      </div>
+      <div class="row">
+        <select id="t-food" class="grow" aria-label="Alimento a probar"></select>
+        <button class="primary" id="t-start">Empezar prueba</button>
+      </div>
+      <p class="tiny" id="t-msg" hidden></p>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Mi lista de tolerancia</h2><span class="tiny muted" id="t-count"></span></div>
+      <div id="tests"></div>
+    </div>
+  </section>
+
+  <!-- ================= HISTORIAL ================= -->
+  <section id="v-hist" class="wrap" hidden>
+    <div class="card">
+      <div class="card-head"><h2>Últimos 7 días</h2><span class="tiny muted">Barras: histamina · círculo: síntomas</span></div>
+      <div class="chart" id="chart"></div>
+    </div>
+    <div class="card">
+      <h2>Detalle</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Día</th><th>Pts</th><th>Síntomas</th><th>Cafeína</th><th>Alimentos de lista 1 y 2</th></tr></thead>
+        <tbody id="hist-t"></tbody>
+      </table></div>
+      <p class="note">Si los días con más puntos coinciden con más síntomas, esos alimentos son los candidatos a dosificar en la etapa 3.</p>
+    </div>
+  </section>
+
+  <p class="note">Estimación orientativa basada en las listas de alimentos con alto, moderado y bajo contenido de histamina de una guía alimentaria. No mide histamina real: el contenido cambia con la frescura, la maduración y la conservación. La cafeína sale de la tabla de la guía; mate cocido y chocolate son valores aproximados. Los datos se guardan solo en este navegador.</p>
+</div>
+
+<nav aria-label="Secciones"><div class="bar-nav">
+  <button data-view="hoy" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>Hoy</button>
+  <button data-view="tol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg>Tolerancia</button>
+  <button data-view="armar" class="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Plato</button>
+  <button data-view="hist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20V12M12 20V6M19 20v-9"/></svg>Historial</button>
+</div></nav>
+
+<script>
+// ================= Alimentos (listas 1, 2 y 3 de la guía) =================
+const L = {
+ 1:{"Bebidas":["Cerveza","Vino","Espumante / champagne","Té verde","Matcha"],
+    "Quesos y fermentados":["Queso parmesano","Queso emmental","Roquefort","Camembert / Brie","Chucrut","Kimchi","Pickles","Pan de masa madre","Kéfir","Tempeh","Miso","Levadura de cerveza"],
+    "Verduras":["Berenjena","Espinaca","Tomate","Salsa de tomate","Tomates secos","Ketchup"],
+    "Pescados y fiambres":["Atún en lata","Caballa en lata","Sardinas en lata","Arenque / caviar","Salame","Jamón","Panceta","Salmón ahumado","Trucha ahumada","Salchichas"],
+    "Frutas":["Banana","Frutilla","Cereza","Ananá","Frambuesa"],
+    "Otros":["Canela","Escabeche","Maní","Papas fritas / snacks","Vinagre","Aceto balsámico","Conservas"]},
+ 2:{"Verduras":["Palta","Champiñón","Calabaza","Zucchini","Ají morrón","Aceitunas"],
+    "Frutos secos":["Nueces","Almendras","Castañas de cajú","Pistachos","Avellanas","Pasas de uva","Higos secos","Orejones","Dátiles"],
+    "Frutas":["Naranja","Pomelo","Mandarina","Limón","Kiwi","Ciruela","Durazno","Papaya"],
+    "Mariscos":["Langostinos","Camarones","Mejillones","Almejas","Pulpo","Calamar"],
+    "Bebidas":["Café","Café instantáneo","Café descafeinado","Mate cebado","Mate cocido","Té negro","Gaseosa"],
+    "Lácteos":["Leche","Yogur","Queso untable","Queso cremoso","Mozzarella","Crema de leche","Manteca","Ghee"],
+    "Trigo":["Pan de trigo","Pastas de trigo","Galletitas de trigo","Pizza","Pastelería","Salvado de trigo"],
+    "Legumbres":["Garbanzos","Lentejas","Porotos","Arvejas","Tofu / soja","Salsa de soja"],
+    "Otros":["Clara de huevo cruda","Chocolate / cacao","Mostaza","Curry","Cúrcuma","Pimentón","Aditivos / ultraprocesado"]},
+ 3:{"Proteínas":["Huevo bien cocido","Pollo","Carne vacuna magra","Cerdo (solomillo / paleta)","Merluza","Brótola","Lenguado","Salmón fresco","Atún fresco","Jurel"],
+    "Cereales":["Arroz","Arroz yamaní","Avena","Quinoa","Amaranto","Trigo sarraceno","Mijo","Papa","Batata","Mandioca","Choclo","Polenta","Fideos de arroz","Fideos de legumbres","Pan sin trigo","Galletas de arroz","Crackers de semillas"],
+    "Verduras":["Acelga","Kale","Brócoli","Coliflor","Lechuga","Rúcula","Achicoria","Berro","Zanahoria","Zapallo","Zapallito","Cebolla","Puerro","Remolacha","Repollo","Pepino","Apio","Chauchas","Espárragos","Alcaucil","Hinojo","Rabanito"],
+    "Frutas":["Manzana","Pera","Arándanos","Uvas","Melón","Sandía","Mango","Maracuyá","Granada","Higo"],
+    "Semillas":["Semillas de chía","Semillas de lino","Semillas de girasol","Semillas de sésamo","Semillas de calabaza","Untable de semillas","Hummus","Aceite de oliva"],
+    "Bebidas":["Agua","Té de hierbas","Café de algarroba","Café de higos","Mate de coco y yuyos","Bebida vegetal","Yogur de coco"]}
+};
+const GRUPO = {"Proteínas":"prot","Pescados y fiambres":"prot","Mariscos":"prot","Legumbres":"prot","Cereales":"hid","Trigo":"hid","Verduras":"veg","Frutas":"fru","Bebidas":"beb"};
+const CAF = {"Café":130,"Café instantáneo":120,"Café descafeinado":4,"Té negro":40,"Té verde":40,"Matcha":40,"Gaseosa":60,"Mate cebado":500,"Mate cocido":40,"Chocolate / cacao":20};
+const TRIGO = new Set([...L[2]["Trigo"],"Pan de masa madre"]);
+const FOODS = {};
+for(const l of [1,2,3]) for(const [cat,arr] of Object.entries(L[l])) for(const n of arr) FOODS[n]={l,cat,g:GRUPO[cat]||"otro"};
+const PTS = {1:3,2:2,3:0};
+const PORC = [0.5,1,1.5], PORC_TXT = {0.5:"Chica",1:"Normal",1.5:"Grande"};
+const ORDEN = ["Desayuno","Colación","Almuerzo","Merienda","Cena"];
+const HORA_DEF = {Desayuno:"08:00",Colación:"11:00",Almuerzo:"13:00",Merienda:"17:00",Cena:"20:30"};
+
+// ================= Estado =================
+const KEY = "diario-histamina-v1";
+const iso = d=>{ const x=new Date(d); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); return x.toISOString().slice(0,10); };
+const today = ()=>iso(new Date());
+const shift = (k,n)=>{ const d=new Date(k+"T12:00:00"); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
+const diffDays = (a,b)=>Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/864e5);
+let S = null;
+try{ S = JSON.parse(localStorage.getItem(KEY)); }catch(e){}
+if(!S) S = seed();
+S.pruebas ||= []; S.platos ||= []; S.days ||= {};
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function seed(){
+  const t=today(), y=shift(t,-1);
+  return { etapa:"reintro", ejemplo:true,
+    platos:[{nombre:"Merluza grillé con panaché de verduras",items:[["Merluza",1],["Zapallito",1],["Zapallo",1],["Zanahoria",1],["Arroz yamaní",0.5]]}],
+    pruebas:[{id:1,food:"Palta",inicio:shift(t,-4),res:"ok"},{id:2,food:"Mate cebado",inicio:t,res:null}],
+    days:{
+      [t]:{sint:3,agua:5,meals:[
+        {id:11,nombre:"Mate cebado y tostadas con untable",comida:"Desayuno",hora:"08:30",items:[["Mate cebado",1],["Pan sin trigo",1],["Untable de semillas",1],["Pera",1]]},
+        {id:12,nombre:"Merluza grillé con panaché de verduras",comida:"Almuerzo",hora:"13:00",items:[["Merluza",1],["Zapallito",1],["Zapallo",1],["Zanahoria",1],["Arroz yamaní",0.5]]},
+        {id:13,nombre:"Yogur de coco con arándanos",comida:"Merienda",hora:"17:00",items:[["Yogur de coco",1],["Arándanos",1],["Té de hierbas",1]]}]},
+      [y]:{sint:4,agua:8,meals:[
+        {id:21,nombre:"Lentejas con arroz",comida:"Almuerzo",hora:"13:00",items:[["Lentejas",1],["Arroz yamaní",1],["Zanahoria",1]]},
+        {id:22,nombre:"Pollo con ensalada de tomate",comida:"Cena",hora:"21:00",items:[["Pollo",1],["Tomate",1],["Lechuga",1]],recal:true}]},
+      [shift(t,-2)]:{sint:7,agua:4,meals:[{id:31,nombre:"Pizza con jamón",comida:"Cena",hora:"21:30",items:[["Pizza",1.5],["Jamón",1],["Mozzarella",1],["Cerveza",1]]}]},
+      [shift(t,-3)]:{sint:2,agua:7,meals:[{id:41,nombre:"Pechuga con puré de zapallo",comida:"Almuerzo",hora:"13:00",items:[["Pollo",1],["Zapallo",1],["Brócoli",1]]}]}
+    }};
+}
+let fecha = today(), vista = "hoy";
+const day = (k=fecha)=> (S.days[k] ||= {sint:null,agua:0,meals:[]});
+
+// ================= Cálculos =================
+const mealPts = m => m.items.reduce((s,[f,p])=>s+(FOODS[f]?PTS[FOODS[f].l]*p:0),0) + (m.recal?2:0);
+const mealCaf = m => m.items.reduce((s,[f,p])=>s+(CAF[f]||0)*p,0);
+const dayPts = d => (d?.meals||[]).reduce((s,m)=>s+mealPts(m),0);
+const dayCaf = d => (d?.meals||[]).reduce((s,m)=>s+mealCaf(m),0);
+const fmt = n => Number.isInteger(n)? String(n) : n.toFixed(1).replace(".",",");
+const level = p => p===0?["z","Sin histamina de alimentos"]:p<=4?["b","Carga baja"]:p<=9?["m","Carga moderada"]:["a","Carga alta"];
+const mins = h => { const [a,b]=(h||"").split(":").map(Number); return isNaN(a)?null:a*60+(b||0); };
+function ayuno(k){
+  const prev = S.days[shift(k,-1)], cur = S.days[k];
+  const last = Math.max(...(prev?.meals||[]).map(m=>mins(m.hora)).filter(x=>x!=null));
+  const first = Math.min(...(cur?.meals||[]).map(m=>mins(m.hora)).filter(x=>x!=null));
+  if(!isFinite(last)||!isFinite(first)) return null;
+  return (24*60-last)+first;
+}
+const sintColor = s => s==null?null:`color-mix(in oklab, var(--bajo), var(--alto) ${(s-1)/9*100}%)`;
+
+const $ = id=>document.getElementById(id);
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dLabel = k=>{ const n=diffDays(today(),k); if(n===0) return "Hoy"; if(n===-1) return "Ayer"; if(n===1) return "Mañana";
+  return new Date(k+"T12:00:00").toLocaleDateString("es-AR",{weekday:"short",day:"numeric",month:"short"}); };
+
+// ================= Dial =================
+function arc(cx,cy,r,a0,a1){ const p=a=>[cx+r*Math.cos(a),cy-r*Math.sin(a)]; const [x0,y0]=p(a0),[x1,y1]=p(a1);
+  return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; }
+function drawDial(v){
+  const MAX=16, ang = x=>Math.PI*(1-Math.min(x,MAX)/MAX), seg=[[0,1,"--accent"],[1,5,"--bajo"],[5,10,"--medio"],[10,16,"--alto"]];
+  let s = seg.map(([a,b,c])=>`<path d="${arc(110,112,88,ang(a)-0.015,ang(b)+0.015)}" stroke="var(${c})" stroke-width="16" fill="none" stroke-linecap="butt" opacity=".9"/>`).join("");
+  const a = ang(v), nx=110+70*Math.cos(a), ny=112-70*Math.sin(a);
+  s += `<line x1="110" y1="112" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="var(--fg)" stroke-width="4" stroke-linecap="round"/><circle cx="110" cy="112" r="7" fill="var(--fg)"/>`;
+  s += `<text x="16" y="126" font-size="10" fill="var(--muted)" font-family="var(--body)">0</text><text x="196" y="126" font-size="10" fill="var(--muted)" font-family="var(--body)">16+</text>`;
+  $("dial").innerHTML = s;
+}
+
+// ================= HOY =================
+function renderHoy(){
+  const d = day(), p = dayPts(d), [lv,txt] = level(p), caf = dayCaf(d);
+  drawDial(p);
+  $("score").textContent = fmt(p);
+  $("verdict").className = "badge b-"+lv; $("verdict").textContent = txt;
+
+  $("caf-txt").textContent = `${fmt(caf)} mg`;
+  $("caf-bar").style.width = Math.min(caf/400*100,100)+"%";
+  $("caf-bar").style.background = caf>250?"var(--alto)":"var(--cafe)";
+
+  const ag = d.agua||0; $("agua-txt").textContent = `${ag} de 8 vasos`;
+  $("glasses").innerHTML = Array.from({length:Math.max(8,ag+1)},(_,i)=>`<button class="glass ${i<ag?"on":""}" data-g="${i}" aria-label="${i+1} vasos"></button>`).join("");
+  $("glasses").querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{ const n=+b.dataset.g+1; d.agua = d.agua===n? n-1 : n; save(); renderHoy(); });
+
+  const ay = ayuno(fecha);
+  $("ayuno-txt").textContent = ay==null ? "falta cena de ayer o desayuno" : `${Math.floor(ay/60)} h ${String(ay%60).padStart(2,"0")}`;
+  $("ayuno-bar").style.width = ay==null?"0%":Math.min(ay/720*100,100)+"%";
+  $("ayuno-bar").style.background = ay!=null && ay<720 ? "var(--medio)" : "var(--accent)";
+
+  // avisos
+  const f = [], l1=new Set(), l2=new Set(), trigo=new Set();
+  d.meals.forEach(m=>m.items.forEach(([n])=>{ const x=FOODS[n]; if(!x) return; if(x.l===1) l1.add(n); if(x.l===2) l2.add(n); if(TRIGO.has(n)) trigo.add(n); }));
+  const prueba = pruebaActiva();
+  const exentos = prueba && diffDays(prueba.inicio,fecha)===0 ? new Set([prueba.food]) : new Set();
+  const fuera = [...l1,...l2].filter(n=>!exentos.has(n));
+  if(S.etapa!=="dosis" && fuera.length) f.push(["bad",`${S.etapa==="detox"?"Detox":"Reintroducción"}: fuera de la lista 3 → ${fuera.join(", ")}.`]);
+  else if(l1.size) f.push(["bad",`Alimentos de alto contenido: ${[...l1].join(", ")}.`]);
+  if(S.etapa==="dosis" && l1.size+l2.size>3) f.push(["",`Usaste ${l1.size+l2.size} alimentos fuente hoy. En esta etapa conviene no sobrecargar el día.`]);
+  if(trigo.size) f.push(["",`Trigo hoy (${[...trigo].join(", ")}). La guía sugiere dejarlo para consumo ocasional.`]);
+  const tarde = d.meals.filter(m=>["Merienda","Cena"].includes(m.comida) && m.items.some(([n])=>FOODS[n]&&FOODS[n].l<3&&!exentos.has(n)));
+  if(tarde.length) f.push(["",`Hay histamina en ${tarde.map(m=>m.comida.toLowerCase()).join(" y ")}. Evitarla de tarde-noche ayuda a descansar mejor.`]);
+  if(d.meals.some(m=>m.recal)) f.push(["","Hay un plato recalentado o hecho con antelación. Preferí preparaciones recién hechas."]);
+  if(caf>250) f.push(["bad",`Cafeína: ${fmt(caf)} mg. Metabolizás lento la cafeína; tu límite es 200–250 mg.`]);
+  if(d.meals.length && !f.length) f.push(["good","Día dentro de lo que propone tu guía. ¡Bien!"]);
+  $("flags").innerHTML = f.map(([c,t])=>`<div class="flag ${c}"><span class="dot"></span><span>${esc(t)}</span></div>`).join("");
+
+  // síntomas
+  $("sint").innerHTML = Array.from({length:10},(_,i)=>{ const v=i+1, on=d.sint===v;
+    return `<button aria-pressed="${on}" data-s="${v}" style="${on?`background:${sintColor(v)}`:""}">${v}</button>`; }).join("");
+  $("sint").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{ const v=+b.dataset.s; d.sint = d.sint===v?null:v; save(); renderHoy(); });
+
+  // reintroducción
+  renderReintroCard();
+
+  // ejemplo
+  $("example-note").innerHTML = S.ejemplo ? `<div class="example"><span>Estos datos son de ejemplo para que veas cómo funciona.</span><button class="link" id="clear-ex">Empezar de cero</button></div>` : "";
+  if(S.ejemplo) $("clear-ex").onclick=()=>{ S={etapa:"detox",platos:[],pruebas:[],days:{},ejemplo:false}; save(); render(); };
+
+  // comidas
+  const ms = d.meals.slice().sort((a,b)=>(mins(a.hora)??ORDEN.indexOf(a.comida)*300)-(mins(b.hora)??ORDEN.indexOf(b.comida)*300));
+  $("meals").innerHTML = ms.length ? ms.map(m=>`
+    <div class="meal">
+      <div class="time"><b class="num">${esc(m.hora||"–")}</b><span>${esc(m.comida)}</span></div>
+      <div class="meal-body">
+        <div class="meal-top"><strong>${esc(m.nombre)}</strong>
+          <span class="row" style="gap:6px"><span class="pts">${fmt(mealPts(m))} pts${mealCaf(m)?` · ${fmt(mealCaf(m))} mg`:""}</span>
+          <span class="actions"><button data-edit="${m.id}">Editar</button><button data-dup="${m.id}">Repetir</button><button data-del="${m.id}">Quitar</button></span></span></div>
+        <div class="chips">${m.items.map(([n,p])=>`<span class="chip l${FOODS[n]?.l||3}">${esc(n)}${p!=1?` · ${PORC_TXT[p].toLowerCase()}`:""}</span>`).join("")}${m.recal?`<span class="chip l2">recalentado +2</span>`:""}</div>
+      </div>
+    </div>`).join("")
+    : `<div class="empty"><span>Todavía no registraste comidas para ${dLabel(fecha).toLowerCase()}.</span><button class="primary" id="empty-add">Agregar el primer plato</button></div>`;
+  $("empty-add")?.addEventListener("click",()=>openBuilder());
+  $("meals").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ d.meals=d.meals.filter(m=>m.id!=b.dataset.del); save(); renderHoy(); });
+  $("meals").querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openBuilder(d.meals.find(m=>m.id==b.dataset.edit)));
+  $("meals").querySelectorAll("[data-dup]").forEach(b=>b.onclick=()=>{ const m=d.meals.find(x=>x.id==b.dataset.dup); openBuilder({...m,id:null,items:m.items.map(x=>[...x])}); });
+}
+
+// ================= ARMAR =================
+let B = null, catSel = "Todos";
+const CATS = ["Todos","Proteínas","Verduras","Cereales","Frutas","Bebidas","Semillas","Legumbres","Lácteos","Trigo","Lista 1","Lista 2"];
+function openBuilder(meal){
+  B = {id:meal?.id||null, items:(meal?.items||[]).map(x=>[...x])};
+  $("b-title").textContent = meal?.id ? "Editar plato" : "Armar plato";
+  $("b-save").textContent = meal?.id ? "Guardar cambios" : "Agregar al día";
+  const h=new Date().getHours(), com = meal?.comida || (h<11?"Desayuno":h<15?"Almuerzo":h<19?"Merienda":"Cena");
+  $("b-nombre").value = meal?.nombre||""; $("b-comida").value = com;
+  $("b-hora").value = meal?.hora || (fecha===today()? `${String(h).padStart(2,"0")}:${String(new Date().getMinutes()).padStart(2,"0")}` : HORA_DEF[com]);
+  $("b-recal").checked = !!meal?.recal; $("b-guardar").checked=false; $("b-buscar").value=""; $("b-err").hidden=true;
+  $("b-plantilla").innerHTML = `<option value="">Mis platos guardados…</option>`+S.platos.map((p,i)=>`<option value="${i}">${esc(p.nombre)}</option>`).join("");
+  show("armar");
+}
+function renderCats(){
+  $("cats").innerHTML = CATS.map(c=>`<button aria-pressed="${c===catSel}" data-c="${c}">${c}</button>`).join("");
+  $("cats").querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{ catSel=b.dataset.c; renderCats(); renderFoods(); });
+}
+const norm = s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+function renderFoods(){
+  const q = norm($("b-buscar").value.trim());
+  const list = Object.entries(FOODS).filter(([n,x])=>{
+    if(q && !norm(n).includes(q)) return false;
+    if(q || catSel==="Todos") return true;
+    if(catSel==="Lista 1") return x.l===1; if(catSel==="Lista 2") return x.l===2;
+    if(catSel==="Semillas") return x.cat==="Semillas"||x.cat==="Frutos secos";
+    return x.cat===catSel;
+  }).sort((a,b)=>a[1].l===b[1].l? 0 : b[1].l-a[1].l);
+  const sel = new Set(B.items.map(([n])=>n));
+  $("foods").innerHTML = list.length ? list.map(([n,x])=>`<button class="food ${sel.has(n)?"sel":""}" data-f="${esc(n)}"><span class="ini l${x.l}">${esc(n[0])}</span><span>${esc(n)}</span></button>`).join("")
+    : `<p class="small muted">No está en las listas de tu guía. Probá con otro nombre.</p>`;
+  $("foods").querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{
+    const n=b.dataset.f, i=B.items.findIndex(([x])=>x===n);
+    if(i>=0) B.items.splice(i,1); else B.items.push([n,1]);
+    $("b-err").hidden=true; renderFoods(); renderPicked();
+  });
+}
+function renderPicked(){
+  $("picked").innerHTML = B.items.length ? B.items.map(([n,p],i)=>`
+    <div class="pick"><span class="chip l${FOODS[n]?.l||3}" style="justify-self:start">${esc(n)}</span>
+      <span class="stepper"><button data-dn="${i}" aria-label="Porción más chica">−</button><span>${PORC_TXT[p]}</span><button data-up="${i}" aria-label="Porción más grande">+</button></span>
+      <button class="actions" data-rm="${i}" aria-label="Quitar ${esc(n)}" style="color:var(--muted)">✕</button></div>`).join("")
+    : `<p class="small muted" style="text-align:center">Tocá alimentos para sumarlos al plato.</p>`;
+  const step=(i,dir)=>{ const k=PORC.indexOf(B.items[i][1])+dir; if(k>=0&&k<PORC.length){ B.items[i][1]=PORC[k]; renderPicked(); } };
+  $("picked").querySelectorAll("[data-dn]").forEach(b=>b.onclick=()=>step(+b.dataset.dn,-1));
+  $("picked").querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>step(+b.dataset.up,1));
+  $("picked").querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{ B.items.splice(+b.dataset.rm,1); renderFoods(); renderPicked(); });
+  updTotals(); drawPlate();
+}
+function updTotals(){ const m={items:B.items,recal:$("b-recal").checked}; $("b-pts").textContent=fmt(mealPts(m)); $("b-caf").textContent=fmt(mealCaf(m)); }
+function drawPlate(){
+  const tot = {veg:0,prot:0,hid:0,fru:0,otro:0};
+  B.items.forEach(([n,p])=>{ const g=FOODS[n]?.g; if(g && g!=="beb") tot[g]+=p; });
+  const sum = Object.values(tot).reduce((a,b)=>a+b,0);
+  let s = `<circle cx="50" cy="50" r="46" fill="var(--surface-2)"/><circle cx="50" cy="50" r="46" fill="none" stroke="var(--line)" stroke-width="2"/>`;
+  if(sum){ let off=0;
+    for(const [g,c] of [["veg","--veg"],["prot","--prot"],["hid","--hid"],["fru","--fru"],["otro","--otro"]]){
+      const v = tot[g]/sum*100; if(!v) continue;
+      s += `<circle cx="50" cy="50" r="30" fill="none" stroke="var(${c})" stroke-width="22" pathLength="100" stroke-dasharray="${v} ${100-v}" stroke-dashoffset="${-off}" transform="rotate(-90 50 50)"/>`;
+      off += v; }
+  } else s += `<circle cx="50" cy="50" r="30" fill="none" stroke="var(--line)" stroke-width="22" stroke-dasharray="3 3"/>`;
+  s += `<circle cx="50" cy="50" r="18" fill="var(--surface)"/>`;
+  $("plate").innerHTML = s;
+  const com=$("b-comida").value, veg = sum? tot.veg/sum : 0;
+  $("plate-tip").textContent = !sum ? "Modelo de la guía: ½ verduras, ¼ proteína, ¼ hidratos"
+    : ["Almuerzo","Cena"].includes(com) && veg<0.4 ? "Sumá verduras: la guía propone que ocupen medio plato."
+    : ["Almuerzo","Cena"].includes(com) && !tot.prot ? "Falta una proteína (¼ del plato)."
+    : "Buen equilibrio según el modelo de la guía.";
+}
+$("b-recal").onchange=updTotals;
+$("b-comida").onchange=drawPlate;
+$("b-buscar").oninput=renderFoods;
+$("b-plantilla").onchange=e=>{ const p=S.platos[e.target.value]; if(!p) return; B.items=p.items.map(x=>[...x]); if(!$("b-nombre").value) $("b-nombre").value=p.nombre; e.target.value=""; renderFoods(); renderPicked(); };
+$("b-cancel").onclick=()=>show("hoy");
+$("b-save").onclick=()=>{
+  if(!B.items.length){ $("b-err").hidden=false; return; }
+  const nombre = $("b-nombre").value.trim() || B.items.map(([n])=>n).slice(0,3).join(", ");
+  const m = {id:B.id||Date.now(), nombre, comida:$("b-comida").value, hora:$("b-hora").value, items:B.items, recal:$("b-recal").checked};
+  const d=day(); if(B.id) d.meals=d.meals.map(x=>x.id===B.id?m:x); else d.meals.push(m);
+  if($("b-guardar").checked && !S.platos.some(p=>p.nombre===nombre)) S.platos.push({nombre,items:B.items.map(x=>[...x])});
+  save(); show("hoy");
+};
+
+// ================= TOLERANCIA =================
+const pruebaActiva = ()=> S.pruebas.find(p=>!p.res);
+function estado(p, ref=fecha){
+  if(p.res==="ok") return ["st-ok","Tolerado"]; if(p.res==="sint") return ["st-bad","Con síntomas"];
+  const n = diffDays(p.inicio, ref);
+  if(n<0) return ["st-run","Empieza "+dLabel(p.inicio).toLowerCase()];
+  if(n===0) return ["st-run","Día 1 · comerlo hoy"]; if(n===1) return ["st-run","Día 2 · no comerlo, observar"];
+  return ["st-run","Anotá el resultado"];
+}
+function resultButtons(p){ return `<div class="row"><button class="btn small" data-res="ok" data-id="${p.id}">Sin síntomas</button><button class="btn small" data-res="sint" data-id="${p.id}">Tuve síntomas</button></div>`; }
+function bindRes(root){ root.querySelectorAll("[data-res]").forEach(b=>b.onclick=()=>{ const p=S.pruebas.find(x=>x.id==b.dataset.id); p.res=b.dataset.res; save(); render(); }); }
+function renderReintroCard(){
+  const c=$("reintro-card"); const p=pruebaActiva();
+  if(S.etapa!=="reintro"){ c.hidden=true; return; }
+  c.hidden=false;
+  if(!p){ c.innerHTML=`<div class="card-head"><h2>Reintroducción</h2></div><p class="small muted">No tenés ninguna prueba en curso.</p><button class="primary" id="rc-go" style="justify-self:start">Elegir próximo alimento</button>`;
+    $("rc-go").onclick=()=>show("tol"); return; }
+  const n=diffDays(p.inicio,fecha), [cls,txt]=estado(p);
+  c.innerHTML = `<div class="card-head"><h2>Probando: ${esc(p.food)}</h2><span class="status ${cls}">${txt}</span></div>
+    <div class="steps">${["Comés "+esc(p.food.toLowerCase())+".","No lo comés. Lista 3 y observás.","Anotás cómo te fue."].map((t,i)=>`<div class="step ${Math.min(Math.max(n,0),2)===i?"now":""}"><b>Día ${i+1}</b><span class="small">${t}</span></div>`).join("")}</div>
+    ${n>=1?resultButtons(p):""}`;
+  bindRes(c);
+}
+function renderTol(){
+  const probados = new Set(S.pruebas.map(p=>p.food));
+  const opts = [2,1].map(l=>`<optgroup label="Lista ${l}">${Object.entries(FOODS).filter(([n,x])=>x.l===l&&!probados.has(n)).map(([n])=>`<option>${esc(n)}</option>`).join("")}</optgroup>`).join("");
+  $("t-food").innerHTML = opts;
+  const act = pruebaActiva();
+  $("t-start").disabled = !!act;
+  $("t-msg").hidden = !act; $("t-msg").textContent = act? `Terminá la prueba de ${act.food} antes de empezar otra.` : "";
+  $("t-count").textContent = `${S.pruebas.filter(p=>p.res==="ok").length} tolerados · ${S.pruebas.filter(p=>p.res==="sint").length} con síntomas`;
+  $("tests").innerHTML = S.pruebas.length ? S.pruebas.slice().reverse().map(p=>{ const [cls,txt]=estado(p, today());
+    return `<div class="test"><div><strong>${esc(p.food)}</strong> <span class="chip l${FOODS[p.food]?.l||2}" style="margin-left:4px">Lista ${FOODS[p.food]?.l||2}</span>
+      <div class="tiny muted">Inicio: ${dLabel(p.inicio)}</div>${!p.res && diffDays(p.inicio,today())>=1 ? resultButtons(p):""}</div>
+      <div class="row" style="justify-content:flex-end"><span class="status ${cls}">${txt}</span><button class="actions" data-tdel="${p.id}" aria-label="Borrar prueba" style="color:var(--muted)">✕</button></div></div>`; }).join("")
+    : `<div class="empty">Cuando empieces la etapa 2, acá se arma tu propia lista de alimentos tolerados.</div>`;
+  bindRes($("tests"));
+  $("tests").querySelectorAll("[data-tdel]").forEach(b=>b.onclick=()=>{ S.pruebas=S.pruebas.filter(p=>p.id!=b.dataset.tdel); save(); renderTol(); });
+}
+$("t-start").onclick=()=>{ if(pruebaActiva()) return; S.pruebas.push({id:Date.now(),food:$("t-food").value,inicio:fecha,res:null}); if(S.etapa!=="reintro") S.etapa="reintro"; save(); render(); };
+
+// ================= HISTORIAL =================
+function renderHist(){
+  const ks = [...Array(7)].map((_,i)=>shift(fecha,i-6));
+  const max = Math.max(10,...ks.map(k=>dayPts(S.days[k])));
+  const col = {z:"var(--accent)",b:"var(--bajo)",m:"var(--medio)",a:"var(--alto)"};
+  $("chart").innerHTML = ks.map(k=>{ const d=S.days[k], p=dayPts(d), [lv]=level(p), s=d?.sint;
+    return `<div class="bar"><div class="col" style="height:${Math.max(p/max*100,2)}%;background:${col[lv]}"></div><b>${fmt(p)}</b>
+      <div style="display:grid;justify-items:center;gap:3px"><span class="sdot ${s?"":"none"}" style="${s?`background:${sintColor(s)}`:""}">${s??"–"}</span><small>${new Date(k+"T12:00:00").toLocaleDateString("es-AR",{weekday:"short"})}<br>${new Date(k+"T12:00:00").getDate()}</small></div></div>`; }).join("");
+  $("hist-t").innerHTML = ks.slice().reverse().map(k=>{ const d=S.days[k];
+    if(!d||!d.meals.length) return `<tr><td>${dLabel(k)}</td><td class="muted">–</td><td class="num">${d?.sint??"–"}</td><td class="muted">–</td><td class="muted">Sin registro</td></tr>`;
+    const src=[...new Set(d.meals.flatMap(m=>m.items.map(([n])=>n)).filter(n=>FOODS[n]&&FOODS[n].l<3))];
+    return `<tr><td>${dLabel(k)}</td><td class="num">${fmt(dayPts(d))}</td><td class="num">${d.sint??"–"}</td><td class="num">${fmt(dayCaf(d))} mg</td><td><div class="chips">${src.length?src.map(n=>`<span class="chip l${FOODS[n].l}">${esc(n)}</span>`).join(""):'<span class="muted">Ninguno</span>'}</div></td></tr>`; }).join("");
+}
+
+// ================= Navegación =================
+function show(v){
+  vista=v;
+  for(const x of ["hoy","armar","tol","hist"]) $("v-"+x).hidden = x!==v;
+  document.querySelectorAll("nav [data-view]").forEach(b=>b.dataset.view===v ? b.setAttribute("aria-current","page") : b.removeAttribute("aria-current"));
+  render(); window.scrollTo({top:0});
+}
+function render(){
+  $("fecha").value=fecha; $("fecha-txt").textContent=dLabel(fecha);
+  document.querySelectorAll("[data-etapa]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.etapa===S.etapa));
+  if(vista==="hoy") renderHoy();
+  if(vista==="armar"){ renderCats(); renderFoods(); renderPicked(); }
+  if(vista==="tol") renderTol();
+  if(vista==="hist") renderHist();
+}
+document.querySelectorAll("nav [data-view]").forEach(b=>b.onclick=()=> b.dataset.view==="armar" ? openBuilder() : show(b.dataset.view));
+document.querySelectorAll("[data-etapa]").forEach(b=>b.onclick=()=>{ S.etapa=b.dataset.etapa; save(); render(); });
+$("go-armar").onclick=()=>openBuilder();
+$("fecha").onchange=e=>{ if(e.target.value){ fecha=e.target.value; render(); } };
+$("prev").onclick=()=>{ fecha=shift(fecha,-1); render(); };
+$("next").onclick=()=>{ fecha=shift(fecha,1); render(); };
+render();
+if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
